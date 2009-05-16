@@ -88,10 +88,8 @@ local function Button_OnLeave(self)
 end
 
 local function Button_OnClick(self, button)
-	if self.dataobj then
-		self.dataobj.OnClick(self.anchor, button)
-	elseif self.panel then
-		InterfaceOptionsFrame_OpenToCategory(self.panel)
+	if self.OnClick(self.arg, self.anchor, button) then
+		self.anchor:Hide()
 	end
 end
 
@@ -162,7 +160,7 @@ local function CreateMenu()
 			delay = 0
 		else
 			delay = delay + elapsed
-			if delay > 1 then
+			if delay > 0.5 then
 				frame:Hide()
 			end
 		end
@@ -179,6 +177,7 @@ local function WipeMenu(menu)
 		button:Hide()
 	end
 	menu.numButtons = 0
+	menu:Hide()
 end
 
 local function CreateButton(menu)
@@ -214,8 +213,8 @@ local function AddOption(menu, option)
 
 	button.title = option.title
 	button.notes = option.notes
-	button.dataobj = option.dataobj
-	button.panel = option.panel
+	button.OnClick = option.OnClick
+	button.arg = option.arg
 	
 	local title = option.title
 	if option.icon then
@@ -227,6 +226,7 @@ local function AddOption(menu, option)
 end
 
 --------------------------------------------------------------------------------
+-- Menu Building
 --------------------------------------------------------------------------------
 
 local function MenuCompare(a, b)
@@ -245,49 +245,100 @@ local function SearchAddonInfo(...)
 	end
 end
 
+local seen = {}
+local function IsUnique(...)
+	local n = select('#', ...)
+	for i = 1,n do
+		local k = select(i, ...)
+		if k and seen[k] then
+			return false
+		end
+	end
+	for i = 1,n do
+		local k = select(i, ...)
+		if k then
+			seen[k] = true
+		end
+	end
+	return true
+end
+
+local function Launcher_OnClick(dataobj, frame, button)
+	dataobj.OnClick(frame, button)
+end
+
+local function BlizPanel_OnClick(panel, frame, button)
+	InterfaceOptionsFrame_OpenToCategory(panel)
+	return true
+end
+
+local Waterfall
+local function Waterfall_OnClick(id, frame, button)
+	if Waterfall:IsOpen(id) then
+		Waterfall:Close(id)
+	else
+		Waterfall:Open(id)
+		return true
+	end
+end
+
 local function BuildMenu(menu)
-	local seen = {}
-	local names = {}
+	wipe(seen)
 	local options = {}
 
-	-- Fill the menu with LDB launchers
+	-- Fetch LDB launchers
 	for name, obj in LDB:DataObjectIterator() do
 		if obj ~= dataobj and obj.type == 'launcher' and type(obj.OnClick) == "function" then
 			local prefix = (obj.label or obj.text or name):match("^(.*)Launcher$")
 			local title, notes = SearchAddonInfo(obj.tocname, prefix, name)
 			title = obj.label or title or obj.text or prefix or name
-			local key = obj.tocname or title
-			if not names[title] and not seen[key] then
+			if IsUnique(title, name, obj.tocname) then
 				tinsert(options, {
 					title = title,
 					notes = notes,
 					icon = obj.icon,
-					dataobj = obj,
+					arg = obj,
+					OnClick = Launcher_OnClick,
 				})
-				names[title] = true
-				seen[key] = true
 			end
 		end
 	end
 	
-	-- Fill the menu with interface panel
+	-- Fetch interface addon panels
 	for i, panel in ipairs(INTERFACEOPTIONS_ADDONCATEGORIES) do
 		if panel.name and not panel.parent then
 			local title, notes = SearchAddonInfo(panel.tocname, panel.name)
 			title = title or panel.name
-			local key = panel.tocname or title
-			if not names[title] and not seen[key] then
+			if IsUnique(title, panel.name, panel.tocname) then
 				tinsert(options, { 
 					title = title,
 					notes = notes, 
-					panel = panel,
+					arg = panel,
+					OnClick = BlizPanel_OnClick,
 				})
-				names[title] = true
-				seen[key] = true
 			end
 		end
 	end
 	
+	-- Fetch waterfall registered settings
+	if not Waterfall then
+		Waterfall = AceLibrary and AceLibrary:HasInstance("Waterfall-1.0") and AceLibrary:GetInstance("Waterfall-1.0")
+	end
+	if Waterfall and type(Waterfall.registry) == "table" then
+		for id, settings in pairs(Waterfall.registry) do
+			local title, notes = SearchAddonInfo(id, settings.title)
+			title = title or settings.title
+			if IsUnique(id, title) then
+				tinsert(options, { 
+					title = title,
+					notes = notes, 
+					arg = id,
+					OnClick = Waterfall_OnClick,
+				})
+			end					
+		end
+	end
+
 	-- Sort the options
 	table.sort(options, MenuCompare)
 
@@ -304,28 +355,46 @@ end
 local menu
 local dirty = true
 
-LDB.RegisterCallback(dataobj, 'LibDataBroker_DataObjectCreated', function(name, obj)
-	if obj.type == "launcher" then
-		dirty = true 
+local function UpdateAndShowMenu()
+	if dirty then
+		BuildMenu(menu)
+		dirty = false
 	end
-end)
+	menu:Show()
+end
+
+local function SetDirty()
+	dirty = true
+	if menu and menu:IsShown() then
+		UpdateAndShowMenu(menu)
+	end
+end
+
+local function RegisterLauncher(name, obj)
+	if obj.type == "launcher" then
+		LDB.RegisterCallback(dataobj, 'LibDataBroker_AttributeChanged_'..name, SetDirty)
+		SetDirty()
+	end
+end
+
+LDB.RegisterCallback(dataobj, 'LibDataBroker_DataObjectCreated', RegisterLauncher)
+for name, obj in LDB:DataObjectIterator() do
+	RegisterLauncher(name, obj)
+end
+
 hooksecurefunc('InterfaceOptions_AddCategory', function(frame)
 	if frame and frame.parent == nil then
-		dirty = true 
+		SetDirty()
 	end
 end)
 
 function dataobj.OnClick(frame)
-	if dirty or not menu then
-		if not menu then
-			menu = CreateMenu()
-		end
-		BuildMenu(menu)
-		dirty = false
+	if not menu then
+		menu = CreateMenu()
 	end
-	menu:ClearAllPoints()
 	menu.anchorFrame = frame
+	menu:ClearAllPoints()
 	menu:SetPoint(GetAnchor(frame))
-	menu:Show()
+	UpdateAndShowMenu()
 end
 

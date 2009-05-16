@@ -6,7 +6,7 @@
 ## Version: @project-version@ 
 ## X-Date: @project-date-iso@
 ## X-License: GPL v2 or later
-## OptionalDeps: LibStub, CallbackHandler-1.0
+## OptionalDeps: LibStub, CallbackHandler-1.0, Waterfall-1.0
 
 #@no-lib-strip@
 libs\LibStub.lua
