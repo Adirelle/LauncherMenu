@@ -22,7 +22,14 @@ local LDB = LibStub('LibDataBroker-1.1')
 local dataobj = LDB:NewDataObject('LauncherMenu', { 
 	type = 'data source',
 	text = 'Launchers',
+	icon = [[Interface\Icons\Ability_Hunter_Quickshot]],
 })
+
+--------------------------------------------------------------------------------
+-- Button handling
+--------------------------------------------------------------------------------
+
+local tooltip
 
 local function GetAnchor(frame)
 	local x,y = frame:GetCenter()
@@ -31,12 +38,6 @@ local function GetAnchor(frame)
 	local vhalf = (y > UIParent:GetHeight()/2) and "TOP" or "BOTTOM"
 	return vhalf..hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP")..hhalf, 0, 0
 end
-
---------------------------------------------------------------------------------
--- Button handling
---------------------------------------------------------------------------------
-
-local tooltip
 
 local function GetGameTooltip(self)
 	tooltip = GameTooltip
@@ -141,6 +142,7 @@ local function CreateMenu()
 	frame:Hide()
 	frame:SetScript('OnShow', LayoutMenu)
 	frame:SetScript('OnHide', function(self) self.anchorFrame = nil end)
+	frame:EnableMouse(true)
 	
 	frame:SetBackdrop({
 	  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]], 
@@ -244,16 +246,18 @@ local function SearchAddonInfo(...)
 end
 
 local function BuildMenu(menu)
+	local seen = {}
 	local names = {}
 	local options = {}
 
-	-- Fill the menu with dataobjects
+	-- Fill the menu with LDB launchers
 	for name, obj in LDB:DataObjectIterator() do
 		if obj ~= dataobj and obj.type == 'launcher' and type(obj.OnClick) == "function" then
 			local prefix = (obj.label or obj.text or name):match("^(.*)Launcher$")
 			local title, notes = SearchAddonInfo(obj.tocname, prefix, name)
 			title = obj.label or title or obj.text or prefix or name
-			if not names[title] then
+			local key = obj.tocname or title
+			if not names[title] and not seen[key] then
 				tinsert(options, {
 					title = title,
 					notes = notes,
@@ -261,22 +265,25 @@ local function BuildMenu(menu)
 					dataobj = obj,
 				})
 				names[title] = true
+				seen[key] = true
 			end
 		end
 	end
 	
-	-- Fill the menu with interface panel names
+	-- Fill the menu with interface panel
 	for i, panel in ipairs(INTERFACEOPTIONS_ADDONCATEGORIES) do
 		if panel.name and not panel.parent then
-			local title, notes = SearchAddonInfo(panel.name)
+			local title, notes = SearchAddonInfo(panel.tocname, panel.name)
 			title = title or panel.name
-			if not names[title] then
+			local key = panel.tocname or title
+			if not names[title] and not seen[key] then
 				tinsert(options, { 
 					title = title,
 					notes = notes, 
 					panel = panel,
 				})
 				names[title] = true
+				seen[key] = true
 			end
 		end
 	end
