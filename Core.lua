@@ -39,47 +39,23 @@ local function GetAnchor(frame)
 	return vhalf..hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP")..hhalf, 0, 0
 end
 
-local function GetGameTooltip(self)
+local function GetGameTooltip(anchor)
 	tooltip = GameTooltip
-	tooltip:SetOwner(self.anchor, "ANCHOR_NONE")
+	tooltip:SetOwner(anchor, "ANCHOR_NONE")
 	return tooltip
 end
 
 local function Button_OnEnter(self)
-	local dataobj = self.dataobj
-	if dataobj then
-		if dataobj.tooltip then
-			tooltip = dataobj.tooltip
-		elseif type(dataobj.OnEnter) == "function" then
-			dataobj.OnEnter(self.anchor)
-		elseif type(dataobj.OnTooltipShow) == "function" then
-			dataobj.OnTooltipShow(GetGameTooltip(self))
-		elseif dataobj.tooltiptext then
-			GetGameTooltip(self):SetText(dataobj.tooltiptext)
-		else
-			GetGameTooltip(self)
-			tooltip:AddLine(self.title, 1, 1, 1)
-			if self.notes then
-				tooltip:AddLine(self.notes)
-			end
-		end
-	else
-		GetGameTooltip(self)
-		tooltip:AddLine(self.title, 1, 1, 1)
-		if self.notes then
-			tooltip:AddLine(self.notes)
-		end
-	end
-	if tooltip then		
+	self.OnEnter(self.arg, self.anchor, self)
+	if tooltip then
 		tooltip:SetPoint(GetAnchor(self.anchor))
 		tooltip:Show()
 	end
 end
 
 local function Button_OnLeave(self)
-	if self.dataobj and type(self.dataobj.OnLeave) == "function" then
-		self.dataobj.OnEnter(self.anchor)
-	elseif tooltip then
+	self.OnLeave(self.arg, self.anchor, self)
+	if tooltip then
 		if tooltip ~= GameTooltip or tooltip:IsOwned(self.anchor) then
 			tooltip:Hide()
 		end
@@ -214,6 +190,8 @@ local function AddOption(menu, option)
 	button.title = option.title
 	button.notes = option.notes
 	button.OnClick = option.OnClick
+	button.OnEnter = option.OnEnter
+	button.OnLeave = option.OnLeave
 	button.arg = option.arg
 	
 	local title = option.title
@@ -223,6 +201,60 @@ local function AddOption(menu, option)
 	button.text:SetText(title)
 	
 	button:Show()
+end
+
+--------------------------------------------------------------------------------
+-- Entry handlers
+--------------------------------------------------------------------------------
+
+local function Default_OnEnter(_, anchor, item)
+	local tooltip = GetGameTooltip(anchor)
+	tooltip:AddLine(item.title, 1, 1, 1)
+	if item.notes then
+		tooltip:AddLine(item.notes)
+	end
+end
+
+local function Default_OnLeave()
+end
+
+local function Launcher_OnEnter(dataobj, anchor, item)
+	if dataobj.tooltip then
+		tooltip = dataobj.tooltip
+	elseif type(dataobj.OnEnter) == "function" then
+		dataobj.OnEnter(anchor)
+	elseif type(dataobj.OnTooltipShow) == "function" then
+		dataobj.OnTooltipShow(GetGameTooltip(anchor))
+	elseif dataobj.tooltiptext then
+		GetGameTooltip(anchor):SetText(dataobj.tooltiptext)
+	else
+		Default_OnEnter(dataobj, anchor, item)
+	end
+end
+
+local function Launcher_OnLeave(dataobj, anchor, item)
+	if type(dataobj.OnLeave) == "function" then
+		dataobj.OnLeave(anchor)
+	end
+end
+
+local function Launcher_OnClick(dataobj, anchor, button)
+	dataobj.OnClick(anchor, button)
+end
+
+local function BlizPanel_OnClick(panel)
+	InterfaceOptionsFrame_OpenToCategory(panel)
+	return true
+end
+
+local Waterfall
+local function Waterfall_OnClick(id)
+	if Waterfall:IsOpen(id) then
+		Waterfall:Close(id)
+	else
+		Waterfall:Open(id)
+		return true
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -263,25 +295,6 @@ local function IsUnique(...)
 	return true
 end
 
-local function Launcher_OnClick(dataobj, frame, button)
-	dataobj.OnClick(frame, button)
-end
-
-local function BlizPanel_OnClick(panel, frame, button)
-	InterfaceOptionsFrame_OpenToCategory(panel)
-	return true
-end
-
-local Waterfall
-local function Waterfall_OnClick(id, frame, button)
-	if Waterfall:IsOpen(id) then
-		Waterfall:Close(id)
-	else
-		Waterfall:Open(id)
-		return true
-	end
-end
-
 local function BuildMenu(menu)
 	wipe(seen)
 	local options = {}
@@ -299,6 +312,8 @@ local function BuildMenu(menu)
 					icon = obj.icon,
 					arg = obj,
 					OnClick = Launcher_OnClick,
+					OnEnter = Launcher_OnEnter,
+					OnLeave = Launcher_OnLeave,
 				})
 			end
 		end
@@ -315,6 +330,8 @@ local function BuildMenu(menu)
 					notes = notes, 
 					arg = panel,
 					OnClick = BlizPanel_OnClick,
+					OnEnter = Default_OnEnter,
+					OnLeave = Default_OnLeave,
 				})
 			end
 		end
@@ -334,6 +351,8 @@ local function BuildMenu(menu)
 					notes = notes, 
 					arg = id,
 					OnClick = Waterfall_OnClick,
+					OnEnter = Default_OnEnter,
+					OnLeave = Default_OnLeave,
 				})
 			end					
 		end
