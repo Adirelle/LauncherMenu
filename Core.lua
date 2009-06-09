@@ -262,7 +262,7 @@ end
 --------------------------------------------------------------------------------
 
 local function MenuCompare(a, b)
-	return tostring(a.title) < tostring(b.title)
+	return tostring(a.title):lower() < tostring(b.title):lower()
 end
 
 local function SearchAddonInfo(...)
