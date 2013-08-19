@@ -8,11 +8,8 @@
 ## X-License: GPL v2 or later
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Waterfall-1.0
 
-#@no-lib-strip@
 libs\LibStub.lua
 libs\CallbackHandler-1.0.lua
-#@end-no-lib-strip@
-
 libs\LibDataBroker-1.1.lua
 
 Core.lua
