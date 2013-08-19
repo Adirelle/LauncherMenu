@@ -2,3 +2,5 @@ package-as: LauncherMenu
 
 license-output: LICENSE.txt
 
+optional-dependencies:
+    - blizzbugssuck
