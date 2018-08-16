@@ -1,4 +1,4 @@
-## Interface: 60000
+## Interface: 80000
 
 ## Title: Broker: LauncherMenu
 ## Notes: Display LDB launcher
