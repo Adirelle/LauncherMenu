@@ -18,6 +18,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 --]]
 
+local addonName = ...
+
 local LDB = LibStub('LibDataBroker-1.1')
 local dataobj = LDB:NewDataObject('LauncherMenu', { 
 	type = 'data source',
@@ -417,3 +419,23 @@ function dataobj.OnClick(frame)
 	UpdateAndShowMenu()
 end
 
+--------------------------------------------------------------------------------
+-- LibDBIcon support
+--------------------------------------------------------------------------------
+
+local DBI = LibStub("LibDBIcon-1.0", true)
+if DBI then
+	local f = CreateFrame("Frame", nil, UIParent)
+	f:RegisterEvent("ADDON_LOADED")
+	f:SetScript("OnEvent", function(_, event, name)
+		if event ~= "ADDON_LOADED" or name ~= addonName then
+			return
+		end
+		f:UnregisterEvent("ADDON_LOADED")
+
+		if not _G.LauncherMenuDBIcon then
+			_G.LauncherMenuDBIcon = {}
+		end
+		DBI:Register('LauncherMenu', dataobj, _G.LauncherMenuDBIcon)
+	end)
+end

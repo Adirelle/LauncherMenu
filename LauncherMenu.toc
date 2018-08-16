@@ -6,7 +6,8 @@
 ## Version: @project-version@ 
 ## X-Date: @project-date-iso@
 ## X-License: GPL v2 or later
-## OptionalDeps: LibStub, CallbackHandler-1.0, Waterfall-1.0, !BlizzBugsSuck
+## OptionalDeps: LibStub, CallbackHandler-1.0, Waterfall-1.0, !BlizzBugsSuck, LibDBIcon-1.0
+## SavedVariables: LauncherMenuDBIcon
 
 libs\LibStub.lua
 libs\CallbackHandler-1.0.lua
