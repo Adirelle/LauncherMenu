@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 local addonName = ...
 
 local LDB = LibStub('LibDataBroker-1.1')
-local dataobj = LDB:NewDataObject('LauncherMenu', { 
+local dataobj = LDB:NewDataObject('LauncherMenu', {
 	type = 'data source',
 	text = 'Launchers',
 	icon = [[Interface\Icons\Ability_Hunter_Quickshot]],
@@ -119,18 +119,18 @@ local function CreateMenu()
 	frame:SetScript('OnShow', LayoutMenu)
 	frame:SetScript('OnHide', function(self) self.anchorFrame = nil end)
 	frame:EnableMouse(true)
-	
+
 	frame:SetBackdrop({
-	  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]], 
-	  edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], 
-	  tile = true, tileSize = 16, edgeSize = 16, 
+	  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+	  edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
+	  tile = true, tileSize = 16, edgeSize = 16,
 	  insets = { left = 5, right = 5, top = 5, bottom = 5 }
 	})
 	frame:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
 	frame:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b);
 	frame:SetFrameStrata("TOOLTIP")
 	frame:SetClampedToScreen(true)
-	
+
 	local timer = CreateFrame("Frame", nil, frame)
 	local delay = 0
 	timer:SetScript('OnUpdate', function(self, elapsed)
@@ -143,7 +143,7 @@ local function CreateMenu()
 			end
 		end
 	end)
-	
+
 	frame.buttons = {}
 	frame.numButtons = 0
 	frame.dirtyLayout = true
@@ -167,15 +167,15 @@ local function CreateButton(menu)
 
 	button:SetScript('OnEnter', Button_OnEnter)
 	button:SetScript('OnLeave', Button_OnLeave)
-	
+
 	button:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
-	button:SetScript('OnClick', Button_OnClick)	
+	button:SetScript('OnClick', Button_OnClick)
 
 	local text = button:CreateFontString()
 	text:SetAllPoints(button)
 	text:SetFontObject(GameTooltipText)
 	button.text = text
-	
+
 	return button
 end
 
@@ -195,13 +195,13 @@ local function AddOption(menu, option)
 	button.OnEnter = option.OnEnter
 	button.OnLeave = option.OnLeave
 	button.arg = option.arg
-	
+
 	local title = option.title
 	if option.icon then
 		title = "\124T"..option.icon..":"..ICON_SIZE.."\124t "..title
 	end
 	button.text:SetText(title)
-	
+
 	button:Show()
 end
 
@@ -271,7 +271,7 @@ local function SearchAddonInfo(...)
 	for i = 1, select('#', ...) do
 		local tocname = select(i, ...)
 		if tocname then
-			local name, title, notes, _, _, reason = GetAddOnInfo(tocname) 
+			local name, title, notes, _, _, reason = GetAddOnInfo(tocname)
 			if name and reason ~= 'MISSING' then
 				return title, notes
 			end
@@ -320,16 +320,16 @@ local function BuildMenu(menu)
 			end
 		end
 	end
-	
+
 	-- Fetch interface addon panels
 	for i, panel in ipairs(INTERFACEOPTIONS_ADDONCATEGORIES) do
 		if panel.name and not panel.parent then
 			local title, notes = SearchAddonInfo(panel.tocname, panel.name)
 			title = title or panel.name
 			if IsUnique(title, panel.name, panel.tocname) then
-				tinsert(options, { 
+				tinsert(options, {
 					title = title,
-					notes = notes, 
+					notes = notes,
 					arg = panel,
 					OnClick = BlizPanel_OnClick,
 					OnEnter = Default_OnEnter,
@@ -338,7 +338,7 @@ local function BuildMenu(menu)
 			end
 		end
 	end
-	
+
 	-- Fetch waterfall registered settings
 	if not Waterfall then
 		Waterfall = AceLibrary and AceLibrary:HasInstance("Waterfall-1.0") and AceLibrary:GetInstance("Waterfall-1.0")
@@ -348,15 +348,15 @@ local function BuildMenu(menu)
 			local title, notes = SearchAddonInfo(id, settings.title)
 			title = title or settings.title
 			if IsUnique(id, title) then
-				tinsert(options, { 
+				tinsert(options, {
 					title = title,
-					notes = notes, 
+					notes = notes,
 					arg = id,
 					OnClick = Waterfall_OnClick,
 					OnEnter = Default_OnEnter,
 					OnLeave = Default_OnLeave,
 				})
-			end					
+			end
 		end
 	end
 
