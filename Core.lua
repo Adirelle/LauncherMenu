@@ -114,7 +114,7 @@ local function LayoutMenu(menu)
 end
 
 local function CreateMenu()
-	local frame = CreateFrame("Frame", nil, UIParent)
+	local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 	frame:Hide()
 	frame:SetScript('OnShow', LayoutMenu)
 	frame:SetScript('OnHide', function(self) self.anchorFrame = nil end)
