@@ -1,9 +1,9 @@
-## Interface: 80000
+## Interface: 90002
 
 ## Title: Broker: LauncherMenu
 ## Notes: Display LDB launcher
 ## Author: Adirelle
-## Version: @project-version@ 
+## Version: @project-version@
 ## X-Date: @project-date-iso@
 ## X-License: GPL v2 or later
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Waterfall-1.0, !BlizzBugsSuck, LibDBIcon-1.0
